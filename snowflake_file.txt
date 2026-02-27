@@ -1,0 +1,140 @@
+CREATE WAREHOUSE TRANSFORMING;
+CREATE DATABASE RAW;
+CREATE DATABASE ANALYTICS;
+CREATE SCHEMA RAW.JAFFLE_SHOP;
+CREATE SCHEMA RAW.STRIPE;
+
+CREATE OR REPLACE TABLE RAW.JAFFLE_SHOP.CUSTOMERS(
+    ID INTEGER,
+    FIRST_NAME VARCHAR,
+    LAST_NAME VARCHAR
+);
+
+create OR REPLACE table raw.jaffle_shop.orders
+( id integer,
+  user_id integer,
+  order_date date,
+  status varchar,
+  _etl_loaded_at timestamp default current_timestamp
+);
+
+create OR REPLACE table raw.stripe.payment 
+( id integer,
+  orderid integer,
+  paymentmethod varchar,
+  status varchar,
+  amount integer,
+  created date,
+  _batched_at timestamp default current_timestamp
+);
+
+create or replace stage dbt_files
+file_format = (
+    type = 'CSV'
+    field_delimiter = ','
+    skip_header = 1,
+    error_on_column_count_mismatch=false
+    );
+
+list @dbt_files;
+
+COPY INTO RAW.JAFFLE_SHOP.CUSTOMERS
+(
+  ID,
+  FIRST_NAME,
+  LAST_NAME
+)
+FROM @dbt_files/jaffle_shop_customers.csv;
+
+COPY INTO RAW.JAFFLE_SHOP.ORDERS
+(
+  ID,
+  USER_ID,
+  ORDER_DATE,
+  STATUS
+)
+FROM @dbt_files/jaffle_shop_orders.csv;
+
+COPY INTO RAW.STRIPE.PAYMENT
+(
+  ID,
+  ORDERID,
+  PAYMENTMETHOD,
+  STATUS,
+  AMOUNT,
+  CREATED
+)
+FROM @dbt_files/stripe_payments.csv;
+
+select * from raw.jaffle_shop.customers; 
+
+select * from raw.jaffle_shop.orders; 
+delete from raw.jaffle_shop.orders where id=1001; 
+
+select * from raw.stripe.payment;
+
+select * from raw.jaffle_shop.dim_customers;
+
+select * from RAW.JAFFLE_SHOP.FACT_ORDERS;
+delete from RAW.JAFFLE_SHOP.FACT_ORDERS where NEHA='Neha';
+
+-- MACROS
+
+select * from RAW.JAFFLE_SHOP.CUSTOM_MACRO_CHECK;
+
+select * from RAW.JAFFLE_SHOP.INBUILT_MACRO _CHECK;
+
+
+
+-- SNAPSHOT
+CREATE OR REPLACE TABLE SAMPLE_TABLE(
+    ID INT,
+    NAME VARCHAR(234),
+    UPDATE_AT_TIME TIMESTAMP
+);
+
+INSERT INTO SAMPLE_TABLE (ID, NAME, UPDATE_AT_TIME) VALUES
+    (1, 'A', '2024-01-01 10:00:00'),
+    (2, 'B', '2024-02-15 15:30:45'),
+    (3, 'C', '2024-03-20 08:15:10');
+
+SELECT * FROM SAMPLE_TABLE;
+
+SELECT * FROM RAW.STRIPE.SAMPLE_SNAP;
+
+UPDATE RAW.STRIPE.SAMPLE_TABLE
+SET NAME = 'A-Updated',
+    UPDATE_AT_TIME = CURRENT_TIMESTAMP()
+WHERE ID = 1; 
+
+UPDATE RAW.STRIPE.SAMPLE_TABLE
+SET NAME = 'A-Updated-Again',
+    UPDATE_AT_TIME = CURRENT_TIMESTAMP()
+WHERE ID = 1; 
+
+
+CREATE OR REPLACE TABLE SAMPLE_TAB(
+    ID INT,
+    NAME VARCHAR(234)
+);
+
+INSERT INTO SAMPLE_TAB (ID, NAME) VALUES
+    (1, 'A'),
+    (2, 'B'),
+    (3, 'C');
+
+SELECT * FROM SAMPLE_TAB;
+SELECT * FROM SAMPLE_SNAP2;
+
+UPDATE RAW.STRIPE.SAMPLE_TAB
+SET NAME = 'A-Updated'
+WHERE ID = 1; 
+
+
+drop table RAW.JAFFLE_SHOP.DIM_CUSTOMERS;
+drop table RAW.JAFFLE_SHOP.FACT_ORDERS;
+drop view RAW.JAFFLE_SHOP.CUSTOM_MACRO_CHECK;
+drop view RAW.JAFFLE_SHOP.INBUILT_MACRO_CHECK;
+drop view RAW.JAFFLE_SHOP.STG_JAFFLE_SHOP_CUSTOMERS;
+drop view RAW.JAFFLE_SHOP.STG_JAFFLE_SHOP_ORDERS;
+drop view RAW.JAFFLE_SHOP.STG_STRIPE_PAYMENTS;
