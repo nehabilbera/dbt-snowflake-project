@@ -1,0 +1,13 @@
+dbt_snowflake_basics:
+  outputs:
+    dev:
+      account: <your-account-name>
+      database: RAW
+      password: <your-password>
+      role: <your-role>
+      schema: JAFFLE_SHOP
+      threads: 1
+      type: snowflake
+      user: <your-username>
+      warehouse: TRANSFORMING
+  target: dev
