@@ -28,34 +28,46 @@ create OR REPLACE table raw.stripe.payment
   _batched_at timestamp default current_timestamp
 );
 
-create or replace stage dbt_files
-file_format = (
-    type = 'CSV'
-    field_delimiter = ','
-    skip_header = 1,
-    error_on_column_count_mismatch=false
-    );
+
+CREATE OR REPLACE FILE FORMAT CSV_FORMAT
+TYPE='csv'
+FIELD_DELIMITER = ','
+SKIP_HEADER = 1
+NULL_IF = ('NULL', 'null');
+
+CREATE OR REPLACE STORAGE INTEGRATION S3_INT
+TYPE = EXTERNAL_STAGE
+STORAGE_PROVIDER = S3
+ENABLED = TRUE
+STORAGE_AWS_ROLE_ARN = '<role-arn>'
+STORAGE_ALLOWED_LOCATIONS = ('<file-url>');
+
+DESC INTEGRATION S3_INT;
+
+
+
+CREATE OR REPLACE STAGE dbt_files
+URL = '<file-url>'
+STORAGE_INTEGRATION = S3_INT
+FILE_FORMAT = CSV_FORMAT;
 
 list @dbt_files;
 
-COPY INTO RAW.JAFFLE_SHOP.CUSTOMERS
-(
-  ID,
-  FIRST_NAME,
-  LAST_NAME
-)
-FROM @dbt_files/jaffle_shop_customers.csv;
-
-COPY INTO RAW.JAFFLE_SHOP.ORDERS
+CREATE OR REPLACE PIPE ORDERS_PIPE
+AUTO_INGEST = TRUE
+AS COPY INTO RAW.JAFFLE_SHOP.ORDERS
 (
   ID,
   USER_ID,
   ORDER_DATE,
   STATUS
 )
-FROM @dbt_files/jaffle_shop_orders.csv;
+FROM @dbt_files
+PATTERN='.*orders.*\\.csv';
 
-COPY INTO RAW.STRIPE.PAYMENT
+CREATE OR REPLACE PIPE PAYMENTS_PIPE
+AUTO_INGEST = TRUE
+AS COPY INTO RAW.STRIPE_PAYMENTS
 (
   ID,
   ORDERID,
@@ -64,7 +76,35 @@ COPY INTO RAW.STRIPE.PAYMENT
   AMOUNT,
   CREATED
 )
-FROM @dbt_files/stripe_payments.csv;
+FROM @dbt_files
+PATTERN='.*payments.*\\.csv';
+
+CREATE OR REPLACE PIPE CUSTOMERS_PIPE
+AUTO_INGEST = TRUE
+AS COPY INTO RAW.CUSTOMERS
+(
+  ID,
+  FIRST_NAME,
+  LAST_NAME
+)
+FROM @dbt_files
+PATTERN='.*customers.*\\.csv';
+
+
+LIST @dbt_files;
+DESC PIPE ORDERS_PIPE;
+DESC PIPE PAYMENTS_PIPE;
+DESC PIPE CUSTOMERS_PIPE;
+
+ALTER PIPE ORDERS_PIPE REFRESH;
+ALTER PIPE PAYMENTS_PIPE REFRESH;
+ALTER PIPE CUSTOMERS_PIPE REFRESH;
+
+SELECT SYSTEM$PIPE_STATUS('ORDERS_PIPE');
+SELECT SYSTEM$PIPE_STATUS('PAYMENTS_PIPE');
+SELECT SYSTEM$PIPE_STATUS('CUSTOMERS_PIPE');
+
+LIST @dbt_files;
 
 select * from raw.jaffle_shop.customers; 
 
