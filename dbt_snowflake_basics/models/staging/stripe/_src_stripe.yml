@@ -1,0 +1,25 @@
+version: 2 
+
+ 
+
+sources: 
+
+# name of the source --- priority to give name same as schema 
+
+  - name: stripe  
+
+    database: raw 
+
+    schema: stripe 
+
+    tables: 
+
+      - name: payment 
+
+ 
+
+           
+
+# other way of creating sources quickly 
+
+# dbt run-operation generate_source --args '{"schema_name": "jaffle_shop", "database_name": "raw"}' 

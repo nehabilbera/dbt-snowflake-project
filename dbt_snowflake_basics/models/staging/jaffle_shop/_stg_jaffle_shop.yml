@@ -1,0 +1,61 @@
+models: 
+
+# generic tests 
+
+  - name: stg_jaffle_shop_customers 
+
+    description: one unique customer per column 
+
+    columns:  
+
+      - name: customer_id 
+
+        description: this is the primary key of my table 
+
+        data_tests: 
+
+          - unique 
+
+          - not_null 
+
+ 
+
+ 
+
+  - name: stg_jaffle_shop_orders 
+
+    columns:  
+
+      - name: order_id 
+
+        data_tests: 
+
+          - unique 
+
+          - not_null 
+
+      - name: status 
+
+      # using description from docs 
+
+        description: "{{ doc('order_status') }}" 
+
+        data_tests: 
+
+          - accepted_values: 
+
+              arguments: 
+
+                values: ['placed', 'shipped', 'completed', 'returned', 'return_pending'] 
+
+      - name: customer_id 
+
+        data_tests: 
+
+          - relationships: 
+
+              to: ref('stg_jaffle_shop_customers') 
+
+              field: customer_id 
+
+ 

@@ -1,0 +1,33 @@
+version: 2 
+
+ 
+
+sources: 
+
+  - name: jaffle_shop 
+
+    database: RAW 
+
+    schema: JAFFLE_SHOP 
+
+    tables: 
+
+      - name: custom_macro_check 
+
+ 
+
+ 
+
+models: 
+
+  - name: custom_macro_check 
+
+    columns: 
+
+      - name: id 
+
+        tests: 
+
+          - not_null 
+
+          - unique 
